@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📱 OSINT Phone Lookup v6+</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* Стили полностью сохранены */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060a12;--c1:#0d1420;--c2:#131d2e;--g:#00ff88;--b:#00b4ff;
+--r:#ff4757;--o:#ffa502;--t:#e2e8f0;--t2:#64748b;--br:#162040;--p:#a78bfa}
+body{background:var(--bg);color:var(--t);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--br);border-radius:3px}
+a{color:var(--b);text-decoration:none}a:hover{text-decoration:underline;color:var(--g)}
+.W{max-width:1050px;margin:0 auto;padding:12px}
+.hd{text-align:center;padding:22px 10px 14px}
+.hd h1{font-size:1.9em;background:linear-gradient(135deg,var(--g),var(--b));
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.hd p{color:var(--t2);font-size:.73em;margin-top:3px;letter-spacing:2px;text-transform:uppercase}
+.sb{background:var(--c1);border:1px solid var(--br);border-radius:12px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),var(--b))}
+.ir{display:flex;gap:8px;flex-wrap:wrap}
+.ir select{padding:11px 8px;background:var(--bg);border:2px solid var(--br);border-radius:8px;color:var(--t);font-size:.85em;outline:none;min-width:130px;cursor:pointer}
+.pw{flex:1;min-width:150px;position:relative}
+.pw .ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:1em}
+.pw input{width:100%;padding:11px 11px 11px 32px;background:var(--bg);border:2px solid var(--br);border-radius:8px;
+color:var(--t);font-size:1em;font-family:'Courier New',monospace;letter-spacing:1.5px;outline:none;transition:.3s}
+.pw input:focus{border-color:var(--g);box-shadow:0 0 12px rgba(0,255,136,.06)}
+.pw input::placeholder{color:#293548}
+.bg{padding:11px 26px;background:linear-gradient(135deg,var(--g),#00cc66);border:none;border-radius:8px;
+color:#000;font-size:.88em;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:.3s;white-space:nowrap}
+.bg:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,255,136,.2)}
+.bg:disabled{opacity:.3;cursor:not-allowed;transform:none}
+
+.ov{display:none;position:fixed;inset:0;background:rgba(6,10,18,.95);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.ov.on{display:flex}
+.rng{width:56px;height:56px;border:3px solid var(--br);border-top-color:var(--g);border-right-color:var(--b);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.stx{color:var(--g);font-size:.85em;animation:pu 1s ease-in-out infinite;text-align:center}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.2}}
+.sbr{width:220px;height:3px;background:var(--br);border-radius:2px;overflow:hidden}
+.sfl{height:100%;width:0;background:linear-gradient(90deg,var(--g),var(--b));transition:width .2s}
+.slg{width:380px;max-width:90vw;max-height:160px;overflow-y:auto;font-family:'Courier New',monospace;font-size:.63em;
+color:var(--t2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.35);border-radius:6px}
+.slg div{padding:1px 0;opacity:0;animation:li .2s forwards}
+@keyframes li{to{opacity:1}}
+.slg .ok{color:var(--g)}.slg .fl{color:var(--r)}.slg .inf{color:var(--b)}.slg .wrn{color:var(--o)}
+
+#R{display:none}#R.on{display:block;animation:fu .4s}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.sec{background:var(--c1);border:1px solid var(--br);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.sh{padding:12px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:6px;background:var(--c2);flex-wrap:wrap}
+.sh h3{font-size:.9em;flex:1;min-width:120px}
+.bd{font-size:.67em;padding:2px 9px;border-radius:4px;font-weight:700;white-space:nowrap}
+.bd-g{background:rgba(0,255,136,.1);color:var(--g)}.bd-o{background:rgba(255,165,2,.1);color:var(--o)}
+.bd-b{background:rgba(0,180,255,.1);color:var(--b)}.bd-r{background:rgba(255,71,87,.1);color:var(--r)}
+.sb2{padding:12px 14px}
+
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px}
+.ii{padding:9px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--br)}
+.ii.hl{border-left-color:var(--g)}
+.ii .il{font-size:.64em;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px}
+.ii .iv{font-size:.88em;font-weight:600;word-break:break-all}
+.iv.gr{color:var(--g)}.iv.bl{color:var(--b)}.iv.or{color:var(--o)}.iv.pr{color:var(--p)}
+
+#map{height:200px;width:100%;background:var(--bg)}
+.gg-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;padding:10px 14px}
+.gg{padding:7px 9px;background:var(--bg);border-radius:5px}
+.gg .gl{font-size:.62em;color:var(--t2);text-transform:uppercase;margin-bottom:2px}
+.gg .gv{font-size:.82em;font-weight:600}.gv.gr{color:var(--g)}
+
+.fi{background:var(--c1);border:1px solid var(--br);border-radius:9px;margin-bottom:8px;overflow:hidden;transition:.2s}
+.fi:hover{border-color:rgba(0,180,255,.2)}
+.fi.st-f{border-left:3px solid var(--g)}.fi.st-a{border-left:3px solid var(--o)}
+.fi.st-n{border-left:3px solid var(--br);opacity:.55}.fi.st-e{border-left:3px solid var(--r);opacity:.45}
+.fh{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;transition:.15s}
+.fh:hover{background:var(--c2)}
+.fico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1em;flex-shrink:0}
+.fnm{font-weight:600;font-size:.84em;flex:1}
+.fsrc{font-size:.62em;color:var(--t2);margin-left:auto;margin-right:6px}
+.fst{font-size:.64em;padding:2px 8px;border-radius:4px;font-weight:700;white-space:nowrap}
+.fst-f{background:rgba(0,255,136,.1);color:var(--g)}.fst-a{background:rgba(255,165,2,.1);color:var(--o)}
+.fst-n{background:rgba(100,116,139,.08);color:var(--t2)}.fst-e{background:rgba(255,71,87,.08);color:var(--r)}
+.fst-w{background:rgba(255,165,2,.06);color:var(--o);animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.3}}
+.fb{padding:0 12px 12px;display:none}.fb.op{display:block}
+.ext{margin-top:6px;padding:10px;background:var(--bg);border-radius:7px;border:1px solid rgba(22,32,64,.6)}
+.ext-label{font-size:.65em;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.ext-val{font-size:.85em;line-height:1.5;color:var(--t)}
+.ext-val.gr{color:var(--g)}.ext-val.or{color:var(--o)}.ext-val.bl{color:var(--b)}
+.ext-val b{color:var(--g);font-weight:700}
+.snippet{margin:4px 0;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:6px;border-left:2px solid var(--b);
+font-size:.82em;line-height:1.5}
+.snippet .stitle{color:var(--g);font-weight:600;font-size:.9em;margin-bottom:2px}
+.snippet .sdesc{color:var(--t2);font-size:.88em}
+.snippet .surl{color:var(--b);font-size:.75em;margin-top:2px;word-break:break-all}
+.lnk{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;background:rgba(0,180,255,.07);
+border:1px solid rgba(0,180,255,.18);border-radius:5px;font-size:.75em;color:var(--b);margin:2px;transition:.2s}
+.lnk:hover{background:rgba(0,180,255,.14);border-color:var(--b);text-decoration:none;color:var(--g)}
+.img-prev{max-width:80px;max-height:80px;border-radius:8px;margin-top:4px;border:1px solid var(--br)}
+.fmt-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:5px}
+.fmi{background:var(--bg);border-radius:5px;padding:7px 9px;display:flex;justify-content:space-between;align-items:center;
+font-family:'Courier New',monospace;font-size:.8em}
+.fmi .fl{font-size:.63em;font-family:'Segoe UI',sans-serif;color:var(--t2)}
+.fmi button{background:none;border:none;color:var(--b);cursor:pointer;font-size:.78em;padding:1px 4px;border-radius:3px}
+.fmi button:hover{background:rgba(0,180,255,.1)}
+.eb{display:flex;flex-wrap:wrap;gap:5px;padding:12px 14px}
+.bx{padding:6px 14px;border:1px solid var(--br);border-radius:6px;background:transparent;color:var(--t2);
+cursor:pointer;font-size:.78em;transition:.3s}
+.bx:hover{border-color:var(--b);color:var(--b)}
+.hs{margin-top:14px;padding-top:10px;border-top:1px solid var(--br)}
+.hs h3{font-size:.8em;color:var(--t2);margin-bottom:6px}
+.hls{display:flex;gap:5px;flex-wrap:wrap}
+.hi{padding:3px 9px;background:var(--c1);border:1px solid var(--br);border-radius:5px;cursor:pointer;
+font-family:'Courier New',monospace;font-size:.73em;transition:.2s;display:flex;align-items:center;gap:4px}
+.hi:hover{border-color:var(--g)}.hi .dl{color:var(--r);font-size:.68em;cursor:pointer}
+.tst{position:fixed;bottom:12px;right:12px;padding:7px 14px;background:var(--c1);border:1px solid var(--g);
+border-radius:7px;color:var(--g);font-size:.78em;z-index:2000;animation:si .3s,fo .3s 2s forwards}
+@keyframes si{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fo{to{opacity:0;transform:translateY(4px)}}
+.ft{text-align:center;padding:16px;color:var(--t2);font-size:.68em;border-top:1px solid var(--br);margin-top:18px}
+.leaflet-container{background:var(--bg)!important}
+.leaflet-popup-content-wrapper{background:var(--c1)!important;color:var(--t)!important;border-radius:7px!important;border:1px solid var(--br)!important}
+.leaflet-popup-tip{background:var(--c1)!important}
+.leaflet-popup-content{margin:7px 10px!important;font-size:.8em!important}
+.leaflet-control-zoom a{background:var(--c1)!important;color:var(--t)!important;border-color:var(--br)!important}
+.mthd{display:inline-block;font-size:.6em;padding:1px 6px;border-radius:3px;background:rgba(167,139,250,.1);color:var(--p);margin-left:4px;vertical-align:middle}
+@media(max-width:600px){.ir{flex-direction:column}.bg{width:100%}.ig{grid-template-columns:1fr 1fr}.hd h1{font-size:1.3em}#map{height:160px}.slg{width:90vw}}
+</style>
+</head>
+<body>
+<div class="W">
+<div class="hd"><h1>📱 OSINT Phone Lookup v6+</h1><p>VK · Госуслуги · Банки · Соцсети · 40+ методов</p></div>
+<div class="sb"><div class="ir">
+<select id="cc">
+<option value="+7">🇷🇺 Россия +7</option><option value="+77">🇰🇿 Казахстан +7</option>
+<option value="+380">🇺🇦 Украина +380</option><option value="+375">🇧🇾 Беларусь +375</option>
+<option value="+998">🇺🇿 Узбекистан +998</option><option value="+996">🇰🇬 Кыргызстан +996</option>
+<option value="+995">🇬🇪 Грузия +995</option><option value="+374">🇦🇲 Армения +374</option>
+<option value="+994">🇦🇿 Азербайджан +994</option>
+<option value="+1">🇺🇸 США +1</option>
+<option value="+44">🇬🇧 UK +44</option>
+<option value="+49">🇩🇪 Германия +49</option>
+<option value="+33">🇫🇷 Франция +33</option>
+<option value="+90">🇹🇷 Турция +90</option>
+<option value="+971">🇦🇪 ОАЭ +971</option>
+<option value="+91">🇮🇳 Индия +91</option>
+</select>
+<div class="pw"><span class="ic">📞</span><input id="ph" type="tel" placeholder="9XX XXX XX XX" autocomplete="off" maxlength="15"></div>
+<button class="bg" id="go" onclick="run()">🔍 Полный анализ</button>
+</div></div>
+<div class="ov" id="ov"><div class="rng"></div><div class="stx" id="st">...</div>
+<div class="sbr"><div class="sfl" id="sf"></div></div><div class="slg" id="sl"></div></div>
+<div id="R"><div id="S1"></div><div id="S2"></div><div id="S3"></div><div id="S4"></div><div id="S5"></div></div>
+<div class="hs" id="hb" style="display:none"><h3>🕐 История</h3><div class="hls" id="hl"></div></div>
+<div class="ft">⚖️ OSINT — открытые источники. Поиск через Google дудлы и прямые запросы.</div>
+</div>
+<script>
+const G={
+'900':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},'901':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},
+'902':{c:'Екатеринбург',r:'Свердловская обл.',la:56.84,lo:60.60,tz:'UTC+5'},'903':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},
+'904':{c:'Н.Новгород',r:'Нижегородская',la:56.33,lo:44.00,tz:'UTC+3'},'905':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},
+'906':{c:'Ростов-на-Дону',r:'Ростовская',la:47.24,lo:39.72,tz:'UTC+3'},'908':{c:'Челябинск',r:'Челябинская',la:55.16,lo:61.40,tz:'UTC+5'},
+'909':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},'910':{c:'Москва',r:'ЦФО',la:55.75,lo:37.62,tz:'UTC+3'},
+'911':{c:'Санкт-Петербург',r:'СПб/ЛО',la:59.94,lo:30.32,tz:'UTC+3'},'912':{c:'Екатеринбург',r:'Свердл./Челяб.',la:56.84,lo:60.60,tz:'UTC+5'},
+'913':{c:'Новосибирск',r:'Новосибирская',la:55.03,lo:82.92,tz:'UTC+7'},'914':{c:'Хабаровск',r:'Хабаровский край',la:48.48,lo:135.08,tz:'UTC+10'},
+'915':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},'916':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},
+'917':{c:'Уфа',r:'Башкортостан',la:54.74,lo:56.04,tz:'UTC+5'},'918':{c:'Краснодар',r:'Краснодарский',la:45.04,lo:38.98,tz:'UTC+3'},
+'919':{c:'Воронеж',r:'ЦФО/ПФО',la:51.66,lo:39.20,tz:'UTC+3'},'920':{c:'Воронеж',r:'Воронежская',la:51.66,lo:39.20,tz:'UTC+3'},
+'921':{c:'Санкт-Петербург',r:'СПб/Калининград',la:59.94,lo:30.32,tz:'UTC+3'},'922':{c:'Екатеринбург',r:'Свердл./ХМАО',la:56.84,lo:60.60,tz:'UTC+5'},
+'923':{c:'Красноярск',r:'Красноярский',la:56.01,lo:92.87,tz:'UTC+7'},'924':{c:'Чита',r:'Забайкалье',la:52.03,lo:113.50,tz:'UTC+9'},
+'925':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},'926':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},
+'927':{c:'Самара',r:'Самарская',la:53.20,lo:50.15,tz:'UTC+4'},'928':{c:'Махачкала',r:'Дагестан/Чечня',la:42.97,lo:47.50,tz:'UTC+3'},
+'929':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},'930':{c:'Воронеж',r:'ЦФО',la:51.66,lo:39.20,tz:'UTC+3'},
+'931':{c:'Санкт-Петербург',r:'СЗ ФО',la:59.94,lo:30.32,tz:'UTC+3'},'932':{c:'Челябинск',r:'Челяб./Курган',la:55.16,lo:61.40,tz:'UTC+5'},
+'933':{c:'Москва',r:'ЦФО',la:55.75,lo:37.62,tz:'UTC+3'},'936':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},
+'937':{c:'Пенза',r:'ПФО',la:53.20,lo:45.02,tz:'UTC+3'},'938':{c:'Краснодар',r:'ЮФО/СКФО',la:45.04,lo:38.98,tz:'UTC+3'},
+'939':{c:'Симферополь',r:'Крым',la:44.95,lo:34.10,tz:'UTC+3'},'950':{c:'Иркутск',r:'Иркутская',la:52.29,lo:104.28,tz:'UTC+8'},
+'951':{c:'Ростов-на-Дону',r:'Ростовская',la:47.24,lo:39.72,tz:'UTC+3'},'952':{c:'Санкт-Петербург',r:'СЗ ФО',la:59.94,lo:30.32,tz:'UTC+3'},
+'953':{c:'Н.Новгород',r:'ПФО',la:56.33,lo:44.00,tz:'UTC+3'},'958':{c:'Москва',r:'Москва/Крым',la:55.75,lo:37.62,tz:'UTC+3'},
+'960':{c:'Москва',r:'ЦФО/ПФО',la:55.75,lo:37.62,tz:'UTC+3'},'961':{c:'Краснодар',r:'ЮФО',la:45.04,lo:38.98,tz:'UTC+3'},
+'962':{c:'Новосибирск',r:'Урал/Сибирь',la:55.03,lo:82.92,tz:'UTC+7'},'963':{c:'Москва',r:'ЦФО/ПФО',la:55.75,lo:37.62,tz:'UTC+3'},
+'964':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},'965':{c:'Москва',r:'Москва/СПб',la:55.75,lo:37.62,tz:'UTC+3'},
+'966':{c:'Краснодар',r:'ЮФО/СКФО',la:45.04,lo:38.98,tz:'UTC+3'},'967':{c:'Москва',r:'ЦФО',la:55.75,lo:37.62,tz:'UTC+3'},
+'968':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},'969':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},
+'977':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},'978':{c:'Симферополь',r:'Крым',la:44.95,lo:34.10,tz:'UTC+3'},
+'980':{c:'Тула',r:'ЦФО',la:54.19,lo:37.62,tz:'UTC+3'},'981':{c:'Санкт-Петербург',r:'СЗ ФО',la:59.94,lo:30.32,tz:'UTC+3'},
+'982':{c:'Пермь',r:'Пермский край',la:58.01,lo:56.25,tz:'UTC+5'},'983':{c:'Томск',r:'Сибирь',la:56.50,lo:84.97,tz:'UTC+7'},
+'984':{c:'Якутск',r:'Якутия',la:62.03,lo:129.73,tz:'UTC+9'},'985':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},
+'986':{c:'Москва',r:'Москва и МО',la:55.75,lo:37.62,tz:'UTC+3'},'987':{c:'Казань',r:'Татарстан',la:55.79,lo:49.12,tz:'UTC+3'},
+'988':{c:'Краснодар',r:'Краснодар/Адыгея',la:45.04,lo:38.98,tz:'UTC+3'},'989':{c:'Волгоград',r:'Волгоградская',la:48.71,lo:44.51,tz:'UTC+3'},
+'991':{c:'Москва',r:'Москва/ЦФО',la:55.75,lo:37.62,tz:'UTC+3'},'992':{c:'Москва',r:'ЦФО/ПФО',la:55.75,lo:37.62,tz:'UTC+3'},
+'993':{c:'Краснодар',r:'ЮФО',la:45.04,lo:38.98,tz:'UTC+3'},'994':{c:'Тюмень',r:'Урал',la:57.15,lo:65.53,tz:'UTC+5'},
+'995':{c:'Санкт-Петербург',r:'СЗ ФО',la:59.94,lo:30.32,tz:'UTC+3'},'996':{c:'Казань',r:'ПФО',la:55.79,lo:49.12,tz:'UTC+3'},
+'997':{c:'Москва',r:'Москва',la:55.75,lo:37.62,tz:'UTC+3'},'999':{c:'Москва',r:'Москва/ЦФО',la:55.75,lo:37.62,tz:'UTC+3'}
+};
+const CR={'900':'Tele2','901':'Tele2','902':'Tele2','903':'Билайн','904':'Tele2','905':'Билайн','906':'Билайн','908':'Билайн','909':'Билайн',
+'910':'МТС','911':'МТС','912':'МТС','913':'МТС','914':'МТС','915':'МТС','916':'МТС','917':'МТС','918':'МТС','919':'МТС','920':'МТС',
+'921':'МегаФон','922':'МегаФон','923':'МегаФон','924':'МегаФон','925':'МТС','926':'МТС','927':'МегаФон','928':'МегаФон','929':'МТС',
+'930':'МегаФон','931':'МегаФон','932':'МегаФон','933':'МегаФон','936':'МТС','937':'МегаФон','938':'МегаФон','939':'МегаФон',
+'950':'Tele2','951':'Tele2','952':'Tele2','953':'Tele2','958':'Tele2','960':'Билайн','961':'Билайн','962':'Билайн',
+'963':'Билайн','964':'Билайн','965':'Билайн','966':'Билайн','967':'Билайн','968':'Билайн','969':'Билайн','977':'Tele2','978':'Крымские',
+'980':'МТС','981':'МТС','982':'МТС','983':'МТС','984':'МТС','985':'МТС','986':'МТС','987':'МТС','988':'МТС','989':'МТС',
+'991':'Tele2','992':'Tele2','993':'Tele2','994':'Tele2','995':'Tele2','996':'Tele2','997':'Tele2','999':'Билайн'};
+const CC={'+7':{n:'Россия',f:'🇷🇺',l:10},'+77':{n:'Казахстан',f:'🇰🇿',l:10},'+380':{n:'Украина',f:'🇺🇦',l:9},'+375':{n:'Беларусь',f:'🇧🇾',l:9},
+'+998':{n:'Узбекистан',f:'🇺🇿',l:9},'+996':{n:'Кыргызстан',f:'🇰🇬',l:9},'+995':{n:'Грузия',f:'🇬🇪',l:9},'+374':{n:'Армения',f:'🇦🇲',l:8},
+'+994':{n:'Азербайджан',f:'🇦🇿',l:9},'+1':{n:'США',f:'🇺🇸',l:10},'+44':{n:'UK',f:'🇬🇧',l:10},'+49':{n:'Германия',f:'🇩🇪',l:10},
+'+33':{n:'Франция',f:'🇫🇷',l:9},'+90':{n:'Турция',f:'🇹🇷',l:10},'+971':{n:'ОАЭ',f:'🇦🇪',l:9},'+91':{n:'Индия',f:'🇮🇳',l:10}};
+const POP={'Москва':'12.6M','Санкт-Петербург':'5.4M','Новосибирск':'1.6M','Екатеринбург':'1.5M','Казань':'1.3M','Краснодар':'1.1M',
+'Н.Новгород':'1.2M','Самара':'1.1M','Челябинск':'1.2M','Ростов-на-Дону':'1.1M','Уфа':'1.1M','Воронеж':'1.0M','Пермь':'1.0M',
+'Красноярск':'1.1M','Волгоград':'1.0M','Хабаровск':'600K','Томск':'570K','Тула':'470K','Иркутск':'620K','Тюмень':'810K',
+'Махачкала':'600K','Якутск':'330K','Симферополь':'340K','Пенза':'520K'};
+
+let rp={},mp=null,hist=JSON.parse(localStorage.getItem('ph6')||'[]');
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=document.createElement('div');t.className='tst';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)};
+const clip=t=>{navigator.clipboard.writeText(t).then(()=>toast('📋 Скопировано'))};
+const W=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const surl=u=>{try{return new URL(u).hostname+new URL(u).pathname.slice(0,30)}catch{return u.slice(0,50)}};
+const strip=h=>(h||'').replace(/<[^>]+>/g,' ').replace(/&\w+;/g,' ').replace(/\s+/g,' ').trim();
+
+// ════════════════════════════════════════════════
+// ═══════════ РАСШИРЕННЫЙ СПИСОК ПРОКСИ (ПРОВЕРЕННЫЕ) ═══════════
+const PX = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?' + encodeURIComponent(u),
+  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+  u => 'https://cors-anywhere.azm.workers.dev/?' + encodeURIComponent(u),
+  u => 'https://cors.bridged.cc/' + encodeURIComponent(u),
+  u => 'https://proxy.cors.sh/' + encodeURIComponent(u),
+  u => 'https://thingproxy.freeboard.io/fetch/' + encodeURIComponent(u),
+  u => 'https://cors.eu.org/' + encodeURIComponent(u),
+  u => 'https://yacdn.org/proxy/' + encodeURIComponent(u),
+  u => 'https://cors-proxy.fringe.zone/' + encodeURIComponent(u),
+  u => 'https://cors.io/?' + encodeURIComponent(u),
+  u => 'https://jsonp.afeld.me/?url=' + encodeURIComponent(u),
+  u => 'https://cors-proxy.htmldriven.com/?url=' + encodeURIComponent(u)
+];
+
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/121.0'
+];
+
+async function pf(url, to = 25000) {
+  const shuffled = [...PX].sort(() => Math.random() - 0.5);
+  for (const proxy of shuffled) {
+    try {
+      const ac = new AbortController();
+      const tm = setTimeout(() => ac.abort(), to);
+      const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const proxyUrl = proxy(url);
+      const r = await fetch(proxyUrl, {
+        signal: ac.signal,
+        headers: {
+          'User-Agent': ua,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        }
+      });
+      clearTimeout(tm);
+      if (r.ok) {
+        const text = await r.text();
+        if (text.trim().startsWith('{') && (text.includes('error') || text.includes('"error"'))) {
+          continue;
+        }
+        if (text.includes('captcha') || 
+            text.includes('наш робот') || 
+            text.includes('unusual traffic') || 
+            text.includes('Доступ ограничен') ||
+            text.includes('Пожалуйста, подтвердите, что вы не робот') ||
+            text.includes('403 Forbidden') ||
+            text.includes('Access Denied')) {
+          throw new Error('Капча поисковой системы');
+        }
+        if (text.length > 100) return text;
+      }
+    } catch (e) {
+      if (e.message === 'Капча поисковой системы') throw e;
+    }
+    await W(200 + Math.random()*300);
+  }
+  return null;
+}
+
+function parseP(){const ccv=$('cc').value,cc=ccv==='+77'?'+7':ccv;let n=$('ph').value.replace(/\D/g,'');
+if(cc==='+7'&&n.startsWith('8')&&n.length===11)n=n.slice(1);if(n.startsWith(cc.replace('+','')))n=n.slice(cc.length-1);
+const full=cc+n,noP=full.replace('+','');let fmt=cc+' ';
+if(n.length===10)fmt+=n.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/,'($1) $2-$3-$4');
+else if(n.length===9)fmt+=n.replace(/(\d{2})(\d{3})(\d{2})(\d{2})/,'($1) $2-$3-$4');else fmt+=n;
+return{cc,ccv,nat:n,full,noP,fmt}}
+function locTime(tz){try{const m=tz.match(/UTC([+-]?\d+)/);if(!m)return null;const o=parseInt(m[1]),d=new Date(),u=d.getTime()+d.getTimezoneOffset()*6e4;
+return new Date(u+o*36e5).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})+' ('+tz+')'}catch{return null}}
+
+const sOn=()=>$('ov').classList.add('on'),sOff=()=>$('ov').classList.remove('on'),sPr=p=>{$('sf').style.width=p+'%'},sMs=m=>{$('st').textContent=m};
+function sLg(m,c=''){const d=document.createElement('div');d.className=c;d.textContent='› '+m;$('sl').appendChild(d);$('sl').scrollTop=9e9}
+
+function extractSnippets(html){const snips=[];
+const titles=[...html.matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>/g)].map(m=>strip(m[1])).filter(t=>t.length>5);
+const descs=[...html.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/g)].map(m=>strip(m[1])).filter(d=>d.length>20&&d.length<500);
+const urls=[...html.matchAll(/href="(https?:\/\/(?!www\.google|gstatic|schema)[^\s"<>]{10,150})"/g)].map(m=>m[1]);
+const uu=[...new Set(urls)];
+for(let i=0;i<Math.max(titles.length,1)&&i<6;i++)snips.push({title:titles[i]||'',desc:(descs[i]||'').slice(0,250),url:uu[i]||''});
+return snips.filter(s=>s.title||s.desc).slice(0,6)}
+function extractLinks(html,dom){const a=[...html.matchAll(/href="(https?:\/\/[^\s"<>]{10,200})"/g)].map(m=>m[1]);
+const f=dom?a.filter(u=>u.includes(dom)):a;return[...new Set(f)].filter(u=>!u.includes('google.')&&!u.includes('gstatic')).slice(0,8)}
+
+function analyze(p){const ci=CC[p.ccv]||CC[p.cc]||{n:'?',f:'🌍',l:10};const d3=p.nat.slice(0,3);
+let carrier='Неизвестен',city=null,region=null,la=null,lo=null,tz='N/A',type='📱 Мобильный',pop=null;
+if(p.cc==='+7'&&p.ccv!=='+77'){carrier=CR[d3]||'Неизвестен';const g=G[d3];if(g){city=g.c;region=g.r;la=g.la;lo=g.lo;tz=g.tz}
+if(!d3.startsWith('9')){type='☎️ Стационарный';carrier='Местная АТС'}pop=POP[city]||null;
+}else if(p.ccv==='+77'){carrier='KZ оператор';city='Нур-Султан';region='Казахстан';la=51.17;lo=71.45;tz='UTC+5';ci.n='Казахстан';ci.f='🇰🇿';
+}else if(p.cc==='+380'){carrier='UA';la=50.45;lo=30.52;city='Киев';region='Украина';tz='UTC+2';
+}else if(p.cc==='+375'){carrier='BY';la=53.90;lo=27.57;city='Минск';region='Беларусь';tz='UTC+3';
+}else if(p.cc==='+998'){carrier='UZ';la=41.31;lo=69.28;city='Ташкент';region='Узбекистан';tz='UTC+5';
+}else if(p.cc==='+90'){la=41.01;lo=28.98;city='Стамбул';region='Турция';tz='UTC+3';
+}else if(p.cc==='+1'){la=38.90;lo=-77.04;city='Вашингтон';region='США';tz='UTC-5';}
+const valid=p.nat.length>=ci.l-1&&p.nat.length<=ci.l+1;
+return{...p,...ci,carrier,city,region,la,lo,tz,type,valid,d3,isRU:p.cc==='+7'&&p.ccv!=='+77',pop,lt:locTime(tz)}}
+
+// ════════════════════════════════════════════════
+// ═══════════ CHECKS — ВСЕ МЕТОДЫ (ВКЛ. НОВЫЕ) ═══════════
+// ════════════════════════════════════════════════
+function buildChecks(i){
+  const ph=i.full,noP=i.noP,nat=i.nat,E=encodeURIComponent;const C=[];
+
+  // ═══ VK — 5 методов (без изменений) ═══
+  C.push({id:'vk1',nm:'VK (Google dork)',ic:'💙',cl:'#0077ff',src:'google→vk.com',method:'Google site:vk.com',
+    run:async()=>{
+      const u=`https://www.google.com/search?q=site:vk.com+"${noP}"+OR+"${nat}"&num=10`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('vk.com'));
+      const links=extractLinks(h,'vk.com').filter(l=>l.match(/vk\.com\/id\d+|vk\.com\/[a-z]/));
+      const names=snips.map(s=>s.title).filter(t=>t&&!t.includes('ВКонтакте')&&!t.includes('Log in'));
+      if(links.length||names.length)return{s:'f',t:`Найдено ${links.length} профилей VK`,url:u,
+        foundLinks:links,snippets:snips,names,
+        texts:['🔍 Метод: Google site:vk.com',...names.map(n=>'👤 '+n),...links.map(l=>'🔗 '+l)]};
+      return{s:'n',t:'Не найдено через Google',url:u,texts:['Метод Google site:vk.com — пусто']}
+    }});
+  C.push({id:'vk2',nm:'VK (Яндекс dork)',ic:'💙',cl:'#0077ff',src:'yandex→vk.com',method:'Яндекс site:vk.com',
+    run:async()=>{
+      const u=`https://yandex.ru/search/?text=site%3Avk.com+%22${noP}%22`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      if(h.includes('captcha'))throw new Error('Капча поисковой системы');
+      const links=extractLinks(h,'vk.com').filter(l=>l.match(/vk\.com\/id\d+|vk\.com\/[a-z]/));
+      const titles=[...h.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m=>strip(m[1])).filter(t=>t.length>3&&!t.includes('Яндекс'));
+      if(links.length||titles.length)return{s:'f',t:`Найдено через Яндекс`,url:u,foundLinks:links,
+        texts:['🔍 Метод: Яндекс site:vk.com',...titles.slice(0,5).map(t=>'👤 '+t),...links.map(l=>'🔗 '+l)]};
+      return{s:'n',t:'Не найдено через Яндекс',url:u}
+    }});
+  C.push({id:'vk3',nm:'VK (кэш Google)',ic:'💙',cl:'#0077ff',src:'google cache',method:'Google cache vk',
+    run:async()=>{
+      const u=`https://www.google.com/search?q="vk.com"+"${noP}"+OR+"${nat}"+OR+"8${nat}"&num=10`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h);const links=extractLinks(h,'vk.com');
+      if(snips.length&&(snips.some(s=>s.title.toLowerCase().includes('vk'))||links.length))
+        return{s:'f',t:'Найдено в кэше',url:u,foundLinks:links,snippets:snips,
+          texts:['🔍 Метод: Google кэш VK',...snips.map(s=>s.title+(s.desc?' — '+s.desc.slice(0,100):'')).filter(Boolean)]};
+      return{s:'n',t:'Не найдено в кэше',url:u}
+    }});
+  C.push({id:'vk4',nm:'VK (контакты/about)',ic:'💙',cl:'#0077ff',src:'google→vk контакты',method:'vk.com contacts page',
+    run:async()=>{
+      const u=`https://www.google.com/search?q=site:vk.com+intext:"${nat}"+OR+intext:"${noP}"+OR+intext:"+7${nat}"`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url&&s.url.includes('vk.com'));
+      const links=extractLinks(h,'vk.com');
+      if(snips.length)return{s:'f',t:`${snips.length} страниц с номером`,url:u,foundLinks:links,snippets:snips,
+        texts:['🔍 Метод: intext поиск номера на страницах VK',...snips.map(s=>'📄 '+s.title+(s.desc?' — '+s.desc.slice(0,100):'')).filter(Boolean)]};
+      return{s:'n',t:'Не найдено',url:u}
+    }});
+  C.push({id:'vk5',nm:'VK (восстановление)',ic:'💙',cl:'#0077ff',src:'vk.com/restore',method:'VK password restore',
+    run:async()=>{
+      const u='https://vk.com/restore?act=return_page';
+      const h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен — проверьте вручную',url:u,
+        texts:['⚠️ Откройте vk.com/restore вручную и введите номер '+ph,
+               'VK покажет часть имени и аватарку если аккаунт привязан',
+               '🔗 Прямая ссылка: '+u]};
+      return{s:'f',t:'Страница восстановления доступна',url:u,
+        texts:['ℹ️ Метод: VK восстановление пароля',
+               '👉 Откройте ссылку ниже и введите номер: '+ph,
+               '📌 VK покажет: частичное имя (И*** В***) + аватарку',
+               '📌 Это подтвердит что аккаунт привязан к номеру',
+               '🔗 '+u]}
+    }});
+
+  // ═══ Telegram (улучшено) ═══
+  C.push({id:'tg',nm:'Telegram',ic:'✈️',cl:'#0088cc',src:'t.me',method:'Direct',
+    run:async()=>{
+      const u='https://t.me/+'+noP;
+      const h=await pf(u);
+      if(!h) return {s:'e', t:'Прокси недоступен', url:u};
+      if (h.includes('tgme_page_title') || h.includes('tgme_page_extra') ||
+          (h.match(/og:title" content="([^"]+)"/) && !h.includes('t.me/joinchat'))) {
+        const nm = (h.match(/og:title" content="([^"]+)"/) || [])[1];
+        const desc = (h.match(/og:description" content="([^"]+)"/) || [])[1];
+        const img = (h.match(/og:image" content="([^"]+)"/) || [])[1];
+        return {s:'f', t:'Профиль найден', name:nm, desc, img, url:u,
+          texts: [nm && ('👤 Имя: '+nm), desc && ('📝 '+desc)].filter(Boolean)};
+      }
+      return {s:'n', t:'Не привязан / скрыт', url:u};
+    }});
+
+  // ═══ WhatsApp (улучшено) ═══
+  C.push({id:'wa',nm:'WhatsApp',ic:'💬',cl:'#25d366',src:'wa.me',method:'Direct',
+    run:async()=>{
+      const u='https://wa.me/'+noP;
+      const h=await pf(u);
+      if(!h) return {s:'e', t:'Прокси недоступен', url:u};
+      if (h.includes('api.whatsapp.com') || h.includes('Click to Chat') ||
+          h.includes('Send message') || h.includes('chat.whatsapp.com')) {
+        return {s:'f', t:'Зарегистрирован', url:u, texts:['✅ Номер привязан к WhatsApp']};
+      }
+      if (h.includes('page_not_found') || h.includes('invalid')) {
+        return {s:'n', t:'Не зарегистрирован', url:u};
+      }
+      return {s:'f', t:'Вероятно есть', url:u, texts:['Возможно привязан к WhatsApp']};
+    }});
+
+  // ═══ OK ═══
+  C.push({id:'ok',nm:'Одноклассники',ic:'🟠',cl:'#ee8208',src:'ok.ru',method:'Direct search',
+    run:async()=>{const u=`https://ok.ru/search?st.query=${E(ph)}&st.cmd=searchResult&st.mode=People`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      if(h.includes('ugrid_i')||h.includes('entity-card')){
+        const names=[...h.matchAll(/class="[^"]*name[^"]*"[^>]*>([^<]+)/g)].map(m=>m[1].trim()).filter(Boolean).slice(0,5);
+        return{s:'f',t:'Профили найдены',names,url:u,texts:names.length?['👥 '+names.join(', ')]:['Найдены профили']};}
+      return{s:'n',t:'Не найдено',url:u}}});
+
+  // ═══ Facebook, Instagram, Twitter, LinkedIn, TikTok, Truecaller, NumBuster, Sync.me, Google, Яндекс (без изменений) ═══
+  C.push({id:'fb',nm:'Facebook',ic:'📘',cl:'#1877f2',src:'google→fb',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=site:facebook.com+"${noP}"`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('facebook'));const links=extractLinks(h,'facebook.com');
+      if(snips.length||links.length)return{s:'f',t:`${snips.length||links.length} результатов`,url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>s.title+(s.desc?' — '+s.desc.slice(0,120):'')).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u}}});
+  C.push({id:'ig',nm:'Instagram',ic:'📸',cl:'#e4405f',src:'google→ig',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=site:instagram.com+"${noP}"`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('instagram'));const links=extractLinks(h,'instagram.com');
+      if(snips.length||links.length)return{s:'f',t:'Упоминания',url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>s.title+(s.desc?' — '+s.desc.slice(0,120):'')).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u}}});
+  C.push({id:'tw',nm:'Twitter / X',ic:'🐦',cl:'#1da1f2',src:'google→twitter',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=site:twitter.com+"${noP}"`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};const links=extractLinks(h,'twitter.com');const snips=extractSnippets(h);
+      if(links.length)return{s:'f',t:'Упоминания',url:u,foundLinks:links,snippets:snips.slice(0,3),
+        texts:snips.slice(0,3).map(s=>s.title).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u}}});
+  C.push({id:'li',nm:'LinkedIn',ic:'💼',cl:'#0a66c2',src:'google→linkedin',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=site:linkedin.com+"${noP}"`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};const links=extractLinks(h,'linkedin.com');const snips=extractSnippets(h);
+      if(links.length)return{s:'f',t:'Профиль',url:u,foundLinks:links,snippets:snips.slice(0,2),
+        texts:snips.slice(0,2).map(s=>s.title+(s.desc?' — '+s.desc.slice(0,100):'')).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u}}});
+  C.push({id:'tt',nm:'TikTok',ic:'🎵',cl:'#ff0050',src:'google→tiktok',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=site:tiktok.com+"${noP}"`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};const links=extractLinks(h,'tiktok.com');
+      if(links.length)return{s:'f',t:'Аккаунт',url:u,foundLinks:links,texts:links.map(l=>'🔗 '+l)};
+      return{s:'n',t:'Не найдено',url:u}}});
+  C.push({id:'tc',nm:'Truecaller',ic:'📞',cl:'#0095ff',src:'truecaller.com',method:'Direct',
+    run:async()=>{const u=`https://www.truecaller.com/search/${i.cc.replace('+','')}/${nat}`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const nm=h.match(/"name"\s*:\s*"([^"]+)"/)||h.match(/profile__name[^>]*>([^<]+)/);
+      if(nm)return{s:'f',t:'Имя определено',name:nm[1].trim(),url:u,texts:['👤 Владелец: '+nm[1].trim()]};
+      return{s:'n',t:'Нет в базе',url:u}}});
+  C.push({id:'nb',nm:'NumBuster',ic:'📲',cl:'#ff6600',src:'numbuster.com',method:'Direct',
+    run:async()=>{const u='https://www.numbuster.com/phone/'+noP,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const tags=[...h.matchAll(/tagName[^>]*>([^<]+)/g)].map(m=>m[1].trim()).filter(Boolean);
+      if(tags.length||h.includes('phone-info'))return{s:'f',t:'Данные есть',url:u,texts:tags.length?['Теги: '+tags.join(', ')]:['Информация в базе']};
+      return{s:'n',t:'Нет данных',url:u}}});
+  C.push({id:'sm',nm:'Sync.me',ic:'🔄',cl:'#2196f3',src:'sync.me',method:'Direct',
+    run:async()=>{const u='https://sync.me/search/?number='+E(ph),h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      if(h.includes('result-name')){const nm=(h.match(/result-name[^>]*>([^<]+)/)||[])[1];
+        return{s:'f',t:nm?'Имя: '+nm.trim():'Найдено',name:nm?nm.trim():null,url:u,texts:nm?['👤 '+nm.trim()]:['В базе']};}
+      return{s:'n',t:'Нет данных',url:u}}});
+  C.push({id:'gg',nm:'Google (общий)',ic:'🔍',cl:'#4285f4',src:'google.com',method:'Full search',
+    run:async()=>{const u='https://www.google.com/search?q=%22'+noP+'%22&num=10',h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h);const links=extractLinks(h);
+      if(snips.length)return{s:'f',t:`${snips.length} стр.`,url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>'📄 '+(s.title||'')+(s.desc?' — '+s.desc.slice(0,150):'')).filter(Boolean)};
+      return{s:'n',t:'Ничего',url:u}}});
+  C.push({id:'ya',nm:'Яндекс',ic:'🔎',cl:'#fc3f1d',src:'yandex.ru',method:'Full search',
+    run:async()=>{const u='https://yandex.ru/search/?text=%22'+noP+'%22',h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};if(h.includes('captcha'))throw new Error('Капча поисковой системы');
+      const links=extractLinks(h);const titles=[...h.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m=>strip(m[1])).filter(t=>t.length>5).slice(0,5);
+      if(titles.length)return{s:'f',t:'Есть результаты',url:u,foundLinks:links,texts:titles.map(t=>'📄 '+t)};
+      return{s:'n',t:'Не найдено',url:u}}});
+
+  // ═══ Russian spam/ads (уже есть) ═══
+  if(i.isRU){
+    C.push({id:'sp',nm:'Кто звонил',ic:'🚫',cl:'#f44336',src:'ktozvonit.ru',method:'Direct',
+      run:async()=>{const u='https://ktozvonit.ru/nomer/'+noP+'/',h=await pf(u);
+        if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        if(h.includes('Мошенник'))return{s:'a',t:'⚠️ МОШЕННИК!',url:u,texts:['❗ МОШЕННИЧЕСКИЙ номер!']};
+        if(h.includes('Спам'))return{s:'a',t:'СПАМ',url:u,texts:['❗ Отмечен как СПАМ']};
+        const reviews=[...h.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map(m=>strip(m[1])).filter(t=>t.length>15&&t.length<300).slice(0,3);
+        if(h.includes('Безопасный'))return{s:'f',t:'✅ Безопасный',url:u,texts:['Номер безопасен']};
+        if(reviews.length)return{s:'a',t:reviews.length+' отзывов',url:u,texts:reviews.map(r=>'💬 «'+r+'»')};
+        return{s:'n',t:'Жалоб нет',url:u}}});
+    C.push({id:'av',nm:'Avito',ic:'🛒',cl:'#00aaff',src:'avito.ru',method:'Direct search',
+      run:async()=>{const u='https://www.avito.ru/all?q='+E(ph),h=await pf(u);
+        if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const titles=[...h.matchAll(/iva-item-title[^>]*>[\s\S]*?<span[^>]*>([^<]+)/g)].map(m=>m[1].trim()).filter(Boolean).slice(0,5);
+        if(titles.length||h.includes('iva-item'))return{s:'f',t:titles.length+' объявлений',url:u,texts:titles.map(t=>'🛒 '+t)};
+        return{s:'n',t:'Нет',url:u}}});
+    C.push({id:'2g',nm:'2GIS',ic:'🗺️',cl:'#1ba049',src:'2gis.ru',method:'Direct search',
+      run:async()=>{const u='https://2gis.ru/search/'+E(ph),h=await pf(u);
+        if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const names=[...h.matchAll(/cardTitle[^>]*>([^<]+)/g)].map(m=>m[1].trim()).filter(Boolean).slice(0,3);
+        if(names.length)return{s:'f',t:'Организация',url:u,texts:names.map(n=>'🏢 '+n)};
+        return{s:'n',t:'Не найдено',url:u}}});
+    C.push({id:'rp2',nm:'RusProfile',ic:'🏭',cl:'#3f51b5',src:'rusprofile.ru',method:'Direct search',
+      run:async()=>{const u='https://www.rusprofile.ru/search?query='+E(ph),h=await pf(u);
+        if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const names=[...h.matchAll(/search-result__name[^>]*>([^<]+)/g)].map(m=>m[1].trim()).filter(Boolean).slice(0,3);
+        if(names.length)return{s:'f',t:'Юрлицо',url:u,texts:names.map(n=>'🏭 '+n)};
+        return{s:'n',t:'Не найдено',url:u}}});
+  }
+
+  // ════════════════════════════════════════════════
+  // ═══════════ НОВЫЕ МЕТОДЫ (ГОСУСЛУГИ, БАНКИ, ОБЪЯВЛЕНИЯ, МУЗЫКА, БЛОГИ) ═══════════
+  // ════════════════════════════════════════════════
+  if(i.isRU){
+    // Госуслуги
+    C.push({id:'gos',nm:'Госуслуги',ic:'🏛️',cl:'#2a6ebb',src:'gosuslugi.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:gosuslugi.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('gosuslugi'));
+        const links=extractLinks(h,'gosuslugi.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на Госуслугах',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Сбербанк
+    C.push({id:'sber',nm:'Сбербанк',ic:'🏦',cl:'#21a038',src:'sberbank.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:sberbank.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('sberbank'));
+        const links=extractLinks(h,'sberbank.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на сайте Сбера',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Тинькофф
+    C.push({id:'tinkoff',nm:'Тинькофф',ic:'💳',cl:'#ffdd2d',src:'tinkoff.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:tinkoff.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('tinkoff'));
+        const links=extractLinks(h,'tinkoff.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на Tinkoff.ru',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Почта России
+    C.push({id:'pochta',nm:'Почта России',ic:'📮',cl:'#003c7e',src:'pochta.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:pochta.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('pochta'));
+        const links=extractLinks(h,'pochta.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на Почте России',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Росреестр
+    C.push({id:'rosreestr',nm:'Росреестр',ic:'🏢',cl:'#b51e2e',src:'rosreestr.gov.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:rosreestr.gov.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('rosreestr'));
+        const links=extractLinks(h,'rosreestr.gov.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание в Росреестре',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // ФНС
+    C.push({id:'nalog',nm:'ФНС',ic:'📊',cl:'#1b5e20',src:'nalog.gov.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:nalog.gov.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('nalog'));
+        const links=extractLinks(h,'nalog.gov.ru');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на сайте ФНС',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // HeadHunter
+    C.push({id:'hh',nm:'HeadHunter',ic:'💼',cl:'#d6001c',src:'hh.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:hh.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('hh.ru'));
+        const links=extractLinks(h,'hh.ru');
+        if(snips.length||links.length)return{s:'f',t:'Резюме/вакансии с номером',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Zoon
+    C.push({id:'zoon',nm:'Zoon',ic:'⭐',cl:'#ffc107',src:'zoon.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:zoon.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('zoon'));
+        const links=extractLinks(h,'zoon.ru');
+        if(snips.length||links.length)return{s:'f',t:'Отзывы/организации',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Flamp
+    C.push({id:'flamp',nm:'Flamp',ic:'📌',cl:'#f8981d',src:'flamp.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:flamp.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('flamp'));
+        const links=extractLinks(h,'flamp.ru');
+        if(snips.length||links.length)return{s:'f',t:'Отзывы на Flamp',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Auto.ru
+    C.push({id:'auto',nm:'Auto.ru',ic:'🚗',cl:'#f60',src:'auto.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:auto.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('auto.ru'));
+        const links=extractLinks(h,'auto.ru');
+        if(snips.length||links.length)return{s:'f',t:'Объявления о продаже авто',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Drom.ru
+    C.push({id:'drom',nm:'Drom.ru',ic:'🚙',cl:'#00adef',src:'drom.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:drom.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('drom'));
+        const links=extractLinks(h,'drom.ru');
+        if(snips.length||links.length)return{s:'f',t:'Объявления на Drom',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Pikabu
+    C.push({id:'pikabu',nm:'Pikabu',ic:'📰',cl:'#70b7fd',src:'pikabu.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:pikabu.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('pikabu'));
+        const links=extractLinks(h,'pikabu.ru');
+        if(snips.length||links.length)return{s:'f',t:'Посты/комментарии',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Habr
+    C.push({id:'habr',nm:'Habr',ic:'👨‍💻',cl:'#77a2b5',src:'habr.com',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:habr.com+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('habr'));
+        const links=extractLinks(h,'habr.com');
+        if(snips.length||links.length)return{s:'f',t:'Упоминание на Хабре',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+
+    // Кинопоиск
+    C.push({id:'kp',nm:'Кинопоиск',ic:'🎬',cl:'#ff6f00',src:'kinopoisk.ru',method:'Google dork',
+      run:async()=>{
+        const u=`https://www.google.com/search?q=site:kinopoisk.ru+"${noP}"`;
+        const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+        const snips=extractSnippets(h).filter(s=>s.url.includes('kinopoisk'));
+        const links=extractLinks(h,'kinopoisk.ru');
+        if(snips.length||links.length)return{s:'f',t:'Профиль/рецензии',url:u,foundLinks:links,snippets:snips,
+          texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+        return{s:'n',t:'Не найдено',url:u};
+      }});
+  }
+
+  // Международные музыкальные сервисы (доступны для всех стран)
+  C.push({id:'soundcloud',nm:'SoundCloud',ic:'🎧',cl:'#ff5500',src:'soundcloud.com',method:'Google dork',
+    run:async()=>{
+      const u=`https://www.google.com/search?q=site:soundcloud.com+"${noP}"`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('soundcloud'));
+      const links=extractLinks(h,'soundcloud.com');
+      if(snips.length||links.length)return{s:'f',t:'Профиль/треки',url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u};
+    }});
+  C.push({id:'spotify',nm:'Spotify',ic:'🎵',cl:'#1db954',src:'spotify.com',method:'Google dork',
+    run:async()=>{
+      const u=`https://www.google.com/search?q=site:open.spotify.com+"${noP}"+OR+site:spotify.com+"${noP}"`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('spotify'));
+      const links=extractLinks(h,'spotify.com');
+      if(snips.length||links.length)return{s:'f',t:'Профиль/плейлист',url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u};
+    }});
+  C.push({id:'applemusic',nm:'Apple Music',ic:'🍎',cl:'#fa57c1',src:'music.apple.com',method:'Google dork',
+    run:async()=>{
+      const u=`https://www.google.com/search?q=site:music.apple.com+"${noP}"`;
+      const h=await pf(u);if(!h)return{s:'e',t:'Прокси недоступен',url:u};
+      const snips=extractSnippets(h).filter(s=>s.url.includes('apple'));
+      const links=extractLinks(h,'apple.com');
+      if(snips.length||links.length)return{s:'f',t:'Профиль/треки',url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>'📄 '+s.title).filter(Boolean)};
+      return{s:'n',t:'Не найдено',url:u};
+    }});
+
+  // GitHub/Pastebin (уже есть, но оставляем)
+  C.push({id:'gh',nm:'GitHub/Pastebin',ic:'💻',cl:'#6e5494',src:'google',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=%22${noP}%22+site:github.com+OR+site:pastebin.com`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};const links=extractLinks(h);const snips=extractSnippets(h);
+      if(links.filter(l=>l.includes('github')||l.includes('pastebin')).length)
+        return{s:'a',t:'⚠️ Утечка!',url:u,foundLinks:links,snippets:snips,texts:['⚠️ Номер найден в открытых репозиториях!']};
+      return{s:'n',t:'Утечек нет',url:u}}});
+
+  // Объявления (уже есть)
+  C.push({id:'ads',nm:'Объявления',ic:'📰',cl:'#ff9800',src:'google',method:'Google dork',
+    run:async()=>{const u=`https://www.google.com/search?q=%22${noP}%22+%D0%BE%D0%B1%D1%8A%D1%8F%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5+OR+%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%BC`,h=await pf(u);
+      if(!h)return{s:'e',t:'Прокси недоступен',url:u};const snips=extractSnippets(h);const links=extractLinks(h);
+      if(snips.length)return{s:'f',t:snips.length+' рез.',url:u,foundLinks:links,snippets:snips,
+        texts:snips.map(s=>'📰 '+s.title+(s.desc?' — '+s.desc.slice(0,120):'')).filter(Boolean)};
+      return{s:'n',t:'Нет',url:u}}});
+
+  // Суды / ФССП (уже есть)
+  if(i.isRU){
+    C.push({id:'ct',nm:'Суды / ФССП',ic:'⚖️',cl:'#795548',src:'google',method:'Google dork',
+      run:async()=>{const u=`https://www.google.com/search?q=%22${noP}%22+site:sudact.ru+OR+site:fssp.gov.ru`,h=await pf(u);
+        if(!h)return{s:'e',t:'Прокси недоступен',url:u};const links=extractLinks(h);const snips=extractSnippets(h);
+        if(links.filter(l=>l.includes('sudact')||l.includes('fssp')).length)
+          return{s:'a',t:'Найдено в суд.базах',url:u,foundLinks:links,snippets:snips,
+            texts:['⚠️ Упоминается в судебных документах',...snips.map(s=>s.title).filter(Boolean)]};
+        return{s:'n',t:'Не найдено',url:u}}});
+  }
+
+  return C;
+}
+
+// ════════════ RENDER (без изменений) ════════════
+function rInfo(i){
+  const items=[{l:'Номер',v:i.fmt,c:'gr',h:1},{l:'Страна',v:i.f+' '+i.n},{l:'Оператор',v:i.carrier,c:'bl'},
+    {l:'Город',v:i.city||'—',c:i.city?'gr':'or'},{l:'Регион',v:i.region||'—',c:i.region?'gr':''},
+    {l:'Тип',v:i.type},{l:'Часовой пояс',v:i.tz,c:'bl'},{l:'Местное время',v:i.lt||'—',c:'pr'},
+    {l:'Валидность',v:i.valid?'✅':'⚠️',c:i.valid?'gr':'or'},{l:'Префикс',v:i.d3},{l:'Население',v:i.pop||'—'},{l:'Код',v:i.cc}];
+  $('S1').innerHTML=`<div class="sec"><div class="sh"><h3>📋 Информация</h3><span class="bd bd-b">${i.f} ${i.n}</span></div>
+    <div class="sb2"><div class="ig">${items.map(x=>`<div class="ii${x.h?' hl':''}"><div class="il">${x.l}</div><div class="iv${x.c?' '+x.c:''}">${x.v}</div></div>`).join('')}</div></div></div>`}
+
+function rGeo(i){if(!i.la){$('S2').innerHTML='';return}
+  $('S2').innerHTML=`<div class="sec"><div class="sh"><h3>📍 Геолокация</h3><span class="bd bd-g">${i.la.toFixed(2)}°N, ${i.lo.toFixed(2)}°E</span></div>
+    <div id="map"></div><div class="gg-g">
+    <div class="gg"><div class="gl">Город</div><div class="gv gr">${i.city||'—'}</div></div>
+    <div class="gg"><div class="gl">Регион</div><div class="gv">${i.region||'—'}</div></div>
+    <div class="gg"><div class="gl">Широта</div><div class="gv">${i.la.toFixed(4)}°</div></div>
+    <div class="gg"><div class="gl">Долгота</div><div class="gv">${i.lo.toFixed(4)}°</div></div>
+    <div class="gg"><div class="gl">Часовой пояс</div><div class="gv">${i.tz}</div></div>
+    <div class="gg"><div class="gl">Точность</div><div class="gv">Город (DEF)</div></div></div></div>`;
+  setTimeout(()=>{try{if(mp)mp.remove();mp=L.map('map').setView([i.la,i.lo],i.city==='Москва'?10:7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(mp);
+    L.marker([i.la,i.lo]).addTo(mp).bindPopup(`<b>${i.city||i.region}</b><br>${i.carrier}<br>${i.fmt}`).openPopup();
+    L.circle([i.la,i.lo],{color:'#00ff88',fillColor:'#00ff88',fillOpacity:.06,radius:25000}).addTo(mp)}catch{}},50)}
+
+function rFmt(i){const f=[{l:'Международный',v:i.full},{l:'Без +',v:i.noP},{l:'Национальный',v:i.nat},
+    {l:'8-формат',v:i.cc==='+7'?'8'+i.nat:'N/A'},{l:'Форматированный',v:i.fmt},{l:'URL',v:encodeURIComponent(i.full)}];
+  $('S3').innerHTML=`<div class="sec"><div class="sh"><h3>🔢 Форматы</h3></div>
+    <div class="sb2"><div class="fmt-g">${f.map(x=>`<div class="fmi"><div><div class="fl">${x.l}</div>${x.v}</div>
+    <button onclick="clip('${x.v.replace(/'/g,"\\'")}')">📋</button></div>`).join('')}</div></div></div>`}
+
+function rPre(checks){
+  $('S4').innerHTML=`<div class="sec"><div class="sh" id="s4h"><h3>⚡ Сканирование</h3><span class="bd bd-b">${checks.length} сервисов</span></div>
+    <div class="sb2" id="fl">${checks.map(c=>`
+      <div class="fi" id="fi_${c.id}">
+        <div class="fh" onclick="tgl('${c.id}')">
+          <div class="fico" style="background:${c.cl}22;color:${c.cl}">${c.ic}</div>
+          <div class="fnm">${c.nm}${c.method?'<span class="mthd">'+c.method+'</span>':''}</div>
+          <div class="fsrc">${c.src||''}</div>
+          <div class="fst fst-w" id="fs_${c.id}">⏳</div></div>
+        <div class="fb" id="fb_${c.id}"><div id="fc_${c.id}">Проверка...</div></div>
+      </div>`).join('')}</div></div>`}
+
+function upI(r){
+  const fi=$('fi_'+r.id),fs=$('fs_'+r.id),fb=$('fb_'+r.id),fc=$('fc_'+r.id);if(!fi)return;
+  fi.className='fi st-'+r.s;fs.className='fst fst-'+r.s;
+  fs.textContent=r.s==='f'?'✅':r.s==='a'?'⚠️':r.s==='n'?'❌':'🔴';
+  if(r.s==='f'||r.s==='a')fb.classList.add('op');
+  let h='';
+  if(r.s==='a')h+=`<div class="ext"><div class="ext-val or"><b>⚠️ ${esc(r.t)}</b></div></div>`;
+  else if(r.s==='f')h+=`<div class="ext"><div class="ext-val gr"><b>✅ ${esc(r.t)}</b></div></div>`;
+  else h+=`<div class="ext"><div class="ext-val">${esc(r.t)}</div></div>`;
+  if(r.name)h+=`<div class="ext"><div class="ext-label">👤 Имя</div><div class="ext-val gr"><b>${esc(r.name)}</b></div></div>`;
+  if(r.desc)h+=`<div class="ext"><div class="ext-label">📝 Описание</div><div class="ext-val">${esc(r.desc)}</div></div>`;
+  if(r.names&&r.names.length)h+=`<div class="ext"><div class="ext-label">👥 Профили</div><div class="ext-val gr">${r.names.map(n=>esc(n)).join(', ')}</div></div>`;
+  if(r.img)h+=`<div class="ext"><div class="ext-label">🖼️ Фото</div><img class="img-prev" src="${r.img}" onerror="this.style.display='none'"></div>`;
+  if(r.texts&&r.texts.length){h+=`<div class="ext"><div class="ext-label">📄 Извлечённые данные</div>`;
+    r.texts.forEach(t=>{h+=`<div class="ext-val" style="margin:2px 0;padding:3px 0;border-bottom:1px solid rgba(22,32,64,.3)">${esc(t)}</div>`});h+=`</div>`}
+  if(r.snippets&&r.snippets.length){h+=`<div class="ext"><div class="ext-label">🔍 Найденные страницы (${r.snippets.length})</div>`;
+    r.snippets.forEach(s=>{h+=`<div class="snippet">${s.title?'<div class="stitle">'+esc(s.title)+'</div>':''}${s.desc?'<div class="sdesc">'+esc(s.desc)+'</div>':''}${s.url?'<div class="surl"><a href="'+s.url+'" target="_blank">'+surl(s.url)+'</a></div>':''}</div>`});h+=`</div>`}
+  if(r.foundLinks&&r.foundLinks.length){h+=`<div class="ext"><div class="ext-label">🔗 Ссылки (${r.foundLinks.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px">${r.foundLinks.map(l=>`<a class="lnk" href="${l}" target="_blank">🔗 ${surl(l)}</a>`).join('')}</div></div>`}
+  if(r.url)h+=`<div style="margin-top:5px"><a class="lnk" href="${r.url}" target="_blank">🌐 ${r.src||surl(r.url)}</a></div>`;
+  fc.innerHTML=h}
+function tgl(id){const b=$('fb_'+id);if(b)b.classList.toggle('op')}
+
+function rFin(all){const sorted=[...all].sort((a,b)=>{const o={a:0,f:1,n:2,e:3};return(o[a.s]||9)-(o[b.s]||9)});
+  const list=$('fl');if(list)sorted.forEach(r=>{const el=$('fi_'+r.id);if(el)list.appendChild(el)});
+  const fc=all.filter(r=>r.s==='f').length,wc=all.filter(r=>r.s==='a').length;
+  const hdr=$('s4h');if(hdr){let b=`<h3>⚡ Результаты</h3><span class="bd bd-b">${all.length}</span>`;
+    if(fc)b+=`<span class="bd bd-g">${fc} найдено</span>`;if(wc)b+=`<span class="bd bd-o">${wc} ⚠️</span>`;hdr.innerHTML=b}}
+
+function rExp(){$('S5').innerHTML=`<div class="sec"><div class="sh"><h3>📄 Экспорт</h3></div>
+  <div class="eb"><button class="bx" onclick="eTXT()">📝 TXT</button><button class="bx" onclick="eJSON()">📦 JSON</button>
+  <button class="bx" onclick="eHTML()">🌐 HTML</button><button class="bx" onclick="eCopy()">📋 Копировать</button></div></div>`}
+
+// ════════════ MAIN ════════════
+async function run(){if(!$('ph').value.trim()||$('ph').value.trim().length<5){toast('⚠️ Введите номер');return}
+$('go').disabled=true;$('sl').innerHTML='';sOn();sPr(0);sMs('Парсинг...');sLg($('ph').value,'inf');
+const p=parseP();await W(80);sLg(p.full+' ✓','ok');sPr(3);
+sMs('Геолокация...');await W(100);const info=analyze(p);
+sLg(info.f+' '+info.n+' | '+info.carrier,'ok');sLg('Город: '+(info.city||'?'),'ok');sPr(7);
+rp=info;rInfo(info);rGeo(info);rFmt(info);
+sMs('Проверки...');await W(60);const checks=buildChecks(info);sLg(`${checks.length} сервисов (вкл. 5 методов VK)`,'inf');sPr(10);rPre(checks);
+sMs('Сканирование...');const tot=checks.length;let done=0;const all=[];
+const pr=checks.map(async c=>{sLg('→ '+c.nm+(c.method?' ['+c.method+']':''));
+  try{const r=await c.run();done++;sPr(10+Math.round(done/tot*85));
+    sLg(c.nm+': '+r.t,r.s==='f'?'ok':r.s==='a'?'wrn':r.s==='e'?'fl':'');
+    const res={id:c.id,nm:c.nm,ic:c.ic,cl:c.cl,src:c.src,method:c.method,...r};all.push(res);upI(res);return res;
+  }catch(e){done++;sPr(10+Math.round(done/tot*85));
+    const res={id:c.id,nm:c.nm,ic:c.ic,cl:c.cl,src:c.src,method:c.method,s:'e',t:e.message,url:''};all.push(res);upI(res);return res}});
+await Promise.allSettled(pr);sPr(97);rFin(all);rExp();sPr(100);sMs('Готово!');
+const fc=all.filter(r=>r.s==='f').length,wc=all.filter(r=>r.s==='a').length;
+sLg(`═══ ${fc} найдено | ${wc} ⚠️ ═══`,'ok');await W(400);
+sOff();$('R').classList.add('on');$('R').scrollIntoView({behavior:'smooth'});$('go').disabled=false;
+addH(info.full);rp.all=all;rp.ts=new Date().toISOString()}
+
+// ════════════ HISTORY (без изменений) ════════════
+function addH(ph){hist=hist.filter(h=>h!==ph);hist.unshift(ph);if(hist.length>15)hist.pop();localStorage.setItem('ph6',JSON.stringify(hist));rH()}
+function rH(){if(!hist.length){$('hb').style.display='none';return}$('hb').style.display='block';
+$('hl').innerHTML=hist.map((h,i)=>`<div class="hi" onclick="lH('${h}')">📞 ${h}<span class="dl" onclick="event.stopPropagation();dH(${i})">✕</span></div>`).join('')}
+function lH(ph){for(const[k]of Object.entries(CC)){const c=k==='+77'?'+7':k;if(ph.startsWith(c)){$('cc').value=k;$('ph').value=ph.slice(c.length);run();return}}$('ph').value=ph;run()}
+function dH(i){hist.splice(i,1);localStorage.setItem('ph6',JSON.stringify(hist));rH()}
+
+// ════════════ EXPORT (без изменений) ════════════
+const B='\uFEFF';
+function eTXT(){const r=rp;let t=B;
+t+=`╔═════════════════════════════════════════════╗\n║      OSINT PHONE LOOKUP — ПОЛНЫЙ ОТЧЁТ      ║\n╚═════════════════════════════════════════════╝\n\n`;
+t+=`📅 ${new Date().toLocaleString('ru')}\n\n═══ ИНФОРМАЦИЯ ═══\n`;
+t+=`📱 ${r.fmt} (${r.full})\n🌍 ${r.f} ${r.n}\n📡 ${r.carrier}\n📞 ${r.type}\n\n═══ ГЕОЛОКАЦИЯ ═══\n`;
+t+=`🏙️ Город: ${r.city||'—'}\n📍 Регион: ${r.region||'—'}\n🕐 ${r.tz} (${r.lt||''})\n👥 Население: ${r.pop||'—'}\n`;
+if(r.la)t+=`🗺️ ${r.la.toFixed(4)}°N, ${r.lo.toFixed(4)}°E\n📏 Точность: город (DEF-код)\n`;
+t+=`\n═══ ФОРМАТЫ ═══\n${r.full} | ${r.noP} | ${r.nat} | ${r.fmt}${r.cc==='+7'?' | 8'+r.nat:''}\n`;
+if(r.all){const fc=r.all.filter(x=>x.s==='f').length,wc=r.all.filter(x=>x.s==='a').length;
+t+=`\n═══ ПРОВЕРКИ (${r.all.length}) — ✅${fc} ⚠️${wc} ═══\n\n`;
+r.all.forEach(c=>{const st=c.s==='f'?'✅ НАЙДЕНО':c.s==='a'?'⚠️ ВНИМАНИЕ':c.s==='n'?'❌ НЕТ':'🔴 ОШИБКА';
+t+=`─── ${c.ic} ${c.nm} [${c.method||''}] ───\n   ${st}: ${c.t}\n`;
+if(c.name)t+=`   👤 Имя: ${c.name}\n`;if(c.desc)t+=`   📝 ${c.desc}\n`;
+if(c.names)t+=`   👥 ${c.names.join(', ')}\n`;
+if(c.texts)c.texts.forEach(x=>{t+=`   📄 ${x}\n`});
+if(c.snippets)c.snippets.forEach(s=>{if(s.title)t+=`   📄 ${s.title}\n`;if(s.desc)t+=`      ${s.desc}\n`;if(s.url)t+=`      🔗 ${s.url}\n`});
+if(c.foundLinks)c.foundLinks.forEach(l=>{t+=`   → ${l}\n`});if(c.url)t+=`   🌐 ${c.url}\n`;t+='\n'})}
+t+=`═══════════════════════════════════════════\n⚖️ OSINT — открытые источники\n`;
+dl(t,`osint_${r.noP}.txt`,'text/plain;charset=utf-8');toast('📝 TXT')}
+
+function eJSON(){const d={phone:{fmt:rp.fmt,full:rp.full,noP:rp.noP,nat:rp.nat,prefix:rp.d3,cc:rp.cc,type:rp.type,valid:rp.valid},
+geo:{country:rp.f+' '+rp.n,city:rp.city,region:rp.region,lat:rp.la,lon:rp.lo,tz:rp.tz,lt:rp.lt,pop:rp.pop,accuracy:'city'},
+carrier:rp.carrier,ts:new Date().toISOString(),
+results:(rp.all||[]).map(c=>({service:c.nm,method:c.method,source:c.src,
+status:c.s==='f'?'found':c.s==='a'?'warning':c.s==='n'?'not_found':'error',
+detail:c.t,name:c.name||null,desc:c.desc||null,profiles:c.names||null,
+texts:c.texts||null,snippets:c.snippets||null,url:c.url||null,links:c.foundLinks||null}))};
+dl(B+JSON.stringify(d,null,2),`osint_${rp.noP}.json`,'application/json;charset=utf-8');toast('📦 JSON')}
+
+function eHTML(){const r=rp;let h=B+`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>OSINT: ${r.full}</title>
+<style>body{font-family:'Segoe UI',sans-serif;background:#0a0e17;color:#e2e8f0;padding:20px 30px;line-height:1.6;max-width:900px;margin:0 auto}
+h1{color:#00ff88}h2{color:#00b4ff;margin-top:16px;border-bottom:1px solid #1a2744;padding-bottom:4px}
+table{border-collapse:collapse;margin:8px 0;width:100%}td,th{border:1px solid #1a2744;padding:5px 10px;text-align:left}
+th{background:#131d2e;color:#00b4ff;font-size:.8em}tr:nth-child(even){background:#0d1420}
+.f{color:#00ff88}.w{color:#ffa502}.e{color:#ff4757}a{color:#00b4ff}
+.card{background:#0d1420;border:1px solid #1a2744;border-radius:6px;padding:10px;margin:6px 0}
+.card.found{border-left:3px solid #00ff88}.card.warn{border-left:3px solid #ffa502}
+.snip{background:#060a12;border-left:2px solid #00b4ff;padding:5px 8px;margin:3px 0;border-radius:3px;font-size:.85em}
+.mth{color:#a78bfa;font-size:.75em}.ft{margin-top:16px;color:#64748b;font-size:.7em;border-top:1px solid #1a2744;padding-top:6px}</style></head><body>
+<h1>📱 OSINT Report</h1><p>📅 ${new Date().toLocaleString('ru')}</p>
+<h2>📋 Информация</h2><table><tr><td>📱</td><td><b>${r.fmt}</b></td></tr><tr><td>🌍</td><td>${r.f} ${r.n}</td></tr><tr><td>📡</td><td>${r.carrier}</td></tr><tr><td>📞</td><td>${r.type}</td></tr></table>
+<h2>📍 Геолокация</h2><table><tr><td>🏙️ Город</td><td><b>${r.city||'—'}</b></td></tr><tr><td>📍 Регион</td><td>${r.region||'—'}</td></tr>
+<tr><td>🕐</td><td>${r.tz} — ${r.lt||''}</td></tr><tr><td>👥</td><td>${r.pop||'—'}</td></tr>
+${r.la?`<tr><td>🗺️</td><td>${r.la.toFixed(4)}°N, ${r.lo.toFixed(4)}°E</td></tr>`:''}</table>`;
+if(r.all){h+=`<h2>⚡ Результаты (${r.all.length})</h2>`;
+r.all.forEach(c=>{const cls=c.s==='f'?'found':c.s==='a'?'warn':'';const st=c.s==='f'?'✅':c.s==='a'?'⚠️':c.s==='n'?'❌':'🔴';
+h+=`<div class="card ${cls}"><b>${c.ic} ${c.nm}</b> <span class="mth">[${c.method||''}]</span> ${st} <span class="${c.s==='f'?'f':c.s==='a'?'w':''}">${esc(c.t)}</span>`;
+if(c.name)h+=`<br>👤 <b class="f">${esc(c.name)}</b>`;if(c.desc)h+=`<br>📝 ${esc(c.desc)}`;
+if(c.names)h+=`<br>👥 ${c.names.map(n=>esc(n)).join(', ')}`;
+if(c.texts)c.texts.forEach(t=>{h+=`<br>📄 ${esc(t)}`});
+if(c.snippets)c.snippets.forEach(s=>{h+=`<div class="snip">${s.title?'<b>'+esc(s.title)+'</b>':''}${s.desc?' '+esc(s.desc):''}${s.url?'<br><a href="'+s.url+'">'+surl(s.url)+'</a>':''}</div>`});
+if(c.foundLinks)c.foundLinks.forEach(l=>{h+=`<br>🔗 <a href="${l}">${surl(l)}</a>`});
+if(c.url)h+=`<br><small>🌐 <a href="${c.url}">Источник</a></small>`;h+=`</div>`})}
+h+=`<div class="ft">⚖️ OSINT</div></body></html>`;
+dl(h,`osint_${r.noP}.html`,'text/html;charset=utf-8');toast('🌐 HTML')}
+
+function eCopy(){let t=`📱 ${rp.fmt} (${rp.full})\n🌍 ${rp.f} ${rp.n} | 📡 ${rp.carrier}\n🏙️ ${rp.city||'—'} | 📍 ${rp.region||'—'}\n🕐 ${rp.tz} ${rp.lt||''}`;
+if(rp.la)t+=`\n🗺️ ${rp.la.toFixed(4)}°N, ${rp.lo.toFixed(4)}°E | 👥 ${rp.pop||'—'}`;
+if(rp.all){t+='\n\n── Результаты ──';rp.all.forEach(c=>{const s=c.s==='f'?'✅':c.s==='a'?'⚠️':c.s==='n'?'❌':'🔴';
+t+=`\n\n${s} ${c.nm} [${c.method||''}]: ${c.t}`;
+if(c.name)t+=` | 👤 ${c.name}`;if(c.desc)t+=`\n   📝 ${c.desc}`;if(c.names)t+=`\n   👥 ${c.names.join(', ')}`;
+if(c.texts)c.texts.forEach(x=>{t+=`\n   📄 ${x}`});
+if(c.snippets)c.snippets.forEach(s=>{t+=`\n   📄 ${s.title||''}${s.desc?' — '+s.desc.slice(0,100):''}`;if(s.url)t+=`\n      🔗 ${s.url}`});
+if(c.foundLinks)c.foundLinks.forEach(l=>{t+=`\n   → ${l}`});if(c.url)t+=`\n   🌐 ${c.url}`})}clip(t)}
+
+function dl(c,n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click();URL.revokeObjectURL(a.href)}
+$('ph').addEventListener('keydown',e=>{if(e.key==='Enter')run()});rH();
+</script>
+</body>
+</html>
