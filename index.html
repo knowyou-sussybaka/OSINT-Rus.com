@@ -224,21 +224,18 @@ const surl=u=>{try{return new URL(u).hostname+new URL(u).pathname.slice(0,30)}ca
 const strip=h=>(h||'').replace(/<[^>]+>/g,' ').replace(/&\w+;/g,' ').replace(/\s+/g,' ').trim();
 
 // ════════════════════════════════════════════════
-// ═══════════ РАСШИРЕННЫЙ СПИСОК ПРОКСИ (ПРОВЕРЕННЫЕ) ═══════════
+// ═══════════ РАСШИРЕННЫЙ СПИСОК ПРОКСИ (ПРОВЕРЕННЫЕ) ═════════
 const PX = [
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
   u => 'https://corsproxy.io/?' + encodeURIComponent(u),
   u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
-  u => 'https://cors-anywhere.azm.workers.dev/?' + encodeURIComponent(u),
-  u => 'https://cors.bridged.cc/' + encodeURIComponent(u),
+  u => 'https://cors-anywhere.azm.workers.dev/' + encodeURIComponent(u),
+  u => 'https://cors.is-a.dev/' + encodeURIComponent(u),
   u => 'https://proxy.cors.sh/' + encodeURIComponent(u),
   u => 'https://thingproxy.freeboard.io/fetch/' + encodeURIComponent(u),
-  u => 'https://cors.eu.org/' + encodeURIComponent(u),
-  u => 'https://yacdn.org/proxy/' + encodeURIComponent(u),
-  u => 'https://cors-proxy.fringe.zone/' + encodeURIComponent(u),
-  u => 'https://cors.io/?' + encodeURIComponent(u),
-  u => 'https://jsonp.afeld.me/?url=' + encodeURIComponent(u),
-  u => 'https://cors-proxy.htmldriven.com/?url=' + encodeURIComponent(u)
+  u => 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all',
+  u => 'https://api.allorigins.win/get?url=' + encodeURIComponent(u) + '&callback=?',
+  u => 'https://jsonp.afeld.me/?url=' + encodeURIComponent(u)
 ];
 
 const USER_AGENTS = [
